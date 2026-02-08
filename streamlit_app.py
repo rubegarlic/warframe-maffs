@@ -68,3 +68,64 @@ st.success("""
 **Don't double up on the same bucket.** Adding a second 'Base Damage' mod (like Heavy Caliber) to a build that already has Serration is like making your rectangle slightly longer but much narrower. 
 You're almost always better off adding a **new dimension** (Elemental, Multishot, Crit, or Faction).
 """)
+
+import plotly.graph_objects as go
+
+# --- 3D SECTION ---
+st.header("3. The 3D Prism (Adding Multishot)")
+st.write("Now we're adding **Multishot** as the depth of our box. Watch how the volume explodes when you balance all three.")
+
+col_s3, col_s4 = st.columns([1, 2])
+
+with col_s3:
+    # Adding the third priority slider
+    w_ms = st.slider("Priority: Multishot", 0.0, 1.0, 0.5)
+    
+    # Normalizing logic for 3 variables
+    total_w_3d = w_base + w_elem + w_ms
+    if total_w_3d == 0:
+        s_base, s_elem, s_ms = 0, 0, 0
+    else:
+        s_base = (w_base / total_w_3d) * total_budget
+        s_elem = (w_elem / total_w_3d) * total_budget
+        s_ms = (w_ms / total_w_3d) * total_budget
+
+    st.write(f"**Base Damage:** +{s_base:.0f}%")
+    st.write(f"**Elemental:** +{s_elem:.0f}%")
+    st.write(f"**Multishot:** +{s_ms:.0f}%")
+
+with col_s4:
+    # Dimensions for the 3D box
+    d_x = 1 + (s_base / 100)
+    d_y = 1 + (s_elem / 100)
+    d_z = 1 + (s_ms / 100)
+    volume = d_x * d_y * d_z
+
+    # Create the 3D box using Plotly
+    # We define the 8 corners of the box
+    fig_3d = go.Figure(data=[
+        go.Mesh3d(
+            x=[0, d_x, d_x, 0, 0, d_x, d_x, 0],
+            y=[0, 0, d_y, d_y, 0, 0, d_y, d_y],
+            z=[0, 0, 0, 0, d_z, d_z, d_z, d_z],
+            i=[7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+            j=[3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+            k=[0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+            color='royalblue',
+            opacity=0.6
+        )
+    ])
+
+    fig_3d.update_layout(
+        scene=dict(
+            xaxis=dict(range=[0, limit], title='Base'),
+            yaxis=dict(range=[0, limit], title='Elem'),
+            zaxis=dict(range=[0, limit], title='Multishot'),
+        ),
+        margin=dict(l=0, r=0, b=0, t=0),
+        title=f"Total Volume: {volume:.2f}x"
+    )
+    
+    st.plotly_chart(fig_3d, use_container_width=True)
+
+st.metric("Final Damage Multiplier (3D)", f"{volume:.2f}x")
